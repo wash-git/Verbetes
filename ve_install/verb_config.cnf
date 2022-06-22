@@ -1,0 +1,19 @@
+# --------------------------------------------------------------------------------------------------------------------------+
+#                                                                                                                           |
+#                                                 MÓDULO  DE  VERBETES                                                      |
+#                                                                                                                           |
+# --------------------------------------------------------------------------------------------------------------------------+
+#
+VEPLOG="../ve_logs"                               # pasta de logs deste módulo
+VEPPHP="../ve_php"                                # pasta de arquivos PHP deste módulo
+VEPTEMP="../ve_temp"                              # pasta de temporários deste módulo
+#
+VEALOG="verb_logshell.log"                        # arquivo de logs
+#
+VETABDOCVERB="ve_documentsverb"                   # nome da tabela da base de dados com referencias verbetes-documentos
+VETABACERVOVERB="ve_acervoverb"	                  # nome da tabela da base de dados com os verbetes do acervo
+#
+VECHMOD500="500"                                  # permissão para os arquivos shell
+VECHMOD750="750"                                  # permissão padrão para pastas
+VECHMOD640="640"                                  # permissão padrão para arquivos
+VECHMOD600="600"                                  # permissão para arquivo de configuração desta aplicação
