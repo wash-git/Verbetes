@@ -4,16 +4,21 @@
 #                                                                                                                           |
 # --------------------------------------------------------------------------------------------------------------------------+
 #
+VEPADMIN="../ve_admin"                            # pasta de admin (utilizado pelo script PHP)
 VEPLOG="../ve_logs"                               # pasta de logs deste módulo
 VEPPHP="../ve_php"                                # pasta de arquivos PHP deste módulo
 VEPTEMP="../ve_temp"                              # pasta de temporários deste módulo
+VEPINSTSUPER="../su_install"                      # pasta 'install' da Superinterface
 #
 VEALOG="verb_logshell.log"                        # arquivo de logs
+VEACONFSUPER="super_config.cnf"                   # arquivo de configuração da Superinterface
+VEACONFPHP="verb_config_php.cnf"                  # arquivo que contém as informações de configuração para scripts PHP deste módulo
 #
 VETABDOCVERB="ve_documentsverb"                   # nome da tabela da base de dados com referencias verbetes-documentos
 VETABACERVOVERB="ve_acervoverb"	                  # nome da tabela da base de dados com os verbetes do acervo
 #
+VECHMOD400="400"                                  # permissão para arquivo de configuração utilizado pelo PHP e o deste módulo
 VECHMOD500="500"                                  # permissão para os arquivos shell
 VECHMOD750="750"                                  # permissão padrão para pastas
 VECHMOD640="640"                                  # permissão padrão para arquivos
-VECHMOD600="600"                                  # permissão para arquivo de configuração desta aplicação
+VECHMOD600="600"

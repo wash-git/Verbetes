@@ -9,8 +9,6 @@
 # --------------------------------------------------------------------------------------------------------------------------+
 VEROOT_UID=0							# root ID
 VEPINSTVERB="ve_install"				# nome da pasta de instalação deste módulo
-VEPINSTSUPER="../su_install"			# nome da pasta de instalação da Superinterface
-VEACONFSUPER="super_config.cnf"			# arquivo de configuração da Superinterface
 VEACONFVERB="verb_config.cnf"			# arquivo de configuração do módulo
 # --------------------------------------------------------------------------------------------------------------------------+
 #																															|
@@ -32,6 +30,8 @@ MErr10="Erro! Não foi encontrado a pasta de arquivos PHP deste módulo"
 MErr11="Erro! Problemas nos procedimentos de inserção de verbetes na base de dados. Código de erro="
 MErr12="Erro! Problemas nos procedimentos de criação das tabelas de verbetes. Código de erro="
 MErr13="Erro! Não foi possível criar a pasta para arquivos temporários"
+MErr14="Erro! Problemas na geração do arquivo de configuração do script PHP"
+MErr15="Erro! Não foi possível criar a pasta 'admin'"
 #
 #	mensagens de informação
 MInfo01="Bem vind@ ao script de instalação do Módulo de Verbetes em:   "
@@ -48,6 +48,7 @@ MInfo11="Sucesso. Criação das tabelas de verbetes realizada corretamente"
 MInfo12="Sucesso. Geração de arquivos filtrados como fontes de verbetes foi realizada corretamente (arquivos .tokens)"
 MInfo13="Resumo, iniciando pelos parâmetros do ambiente:"
 MInfo14="Gerar os verbetes e inseri-los na base de dados. Espere, pode demorar um pouco....." 
+MInfo15="Quantidade de verbetes gerados= "
 #				  códigos das mensagens
 FInfor=0        # saída normal: new line ao final, sem tratamento de cor
 FInfo1=1        # saída normal: new line ao final, sem tratamento de cor e sem ..... (sem pontinhos ilustrativos)
@@ -141,11 +142,14 @@ function fInit () {
 		fMens "$FInsu1" "$MErr02"
         exit
     fi
-	#											verificar se arquivo de configuração do módulo está disponível
+	#											verificar se arquivo de configuração deste módulo está disponível
 	if [ ! -f $VEACONFVERB ]; then
 		fMens "$FInsu1" "$MErr03"
 		exit
 	fi
+	#
+	source  $VEACONFVERB						# inserir arquivo de configuração deste módulo
+	#
 	#											verificar se a Superinterface está instalada
 	if [ ! -d $VEPINSTSUPER ]; then
     	fMens "$FInsu1" "$MErr04"
@@ -157,7 +161,6 @@ function fInit () {
     	exit
     fi
 	source  $VEPINSTSUPER/$VEACONFSUPER			# inserir arquivo de configuração da Superinterface
-	source  $VEACONFVERB						# inserir arquivo de configuração deste módulo
 	#											definir permissões iniciais temporárias de acesso a pastas e arquivos
 	find ../ve_* -type d -exec chmod $VECHMOD750 {} \;
 	find ../ve_* -type f -exec chmod $VECHMOD640 {} \;
@@ -178,6 +181,12 @@ function fInit () {
 		fMens "$FInsu1" "$MErr13"
 		exit
 	fi
+	mkdir $VEPADMIN								# criar pasta de admin do módulo (utilizado pelo script PHP)
+	if [ $? -ne 0 ]; then
+		fMens "$FInsu1" "$MErr15"
+		exit
+	fi
+	#
 	fMens "$FInfo1" "$MCor02"					# saída na cor amarela
 	fMens "$FInfo2" "$MInfo01"					# enviar mensagem de boas vindas
 	fMens "$FInfo1" "$0"						# $0
@@ -185,10 +194,10 @@ function fInit () {
 	fMens "$FInfo1" "$MCor01"
 	fMens "$FSucss" "$MInfo03"					# sucesso na criação de pasta de logs
 	#											verificar existência de pasta de arquivos de PHP's deste módulo
-	if [ ! -d $VEPPHP ]; then
-		fMens "$FInsuc" "$MErr10"
-		exit
-	fi
+#	if [ ! -d $VEPPHP ]; then
+#		fMens "$FInsuc" "$MErr10"
+#		exit
+#	fi
 	#											verificar a conexão com o banco de dados
     mysql -u $CPBASEUSER -b $CPBASE -p$CPBASEPASSW -e "quit" 2>/dev/null
 	if [ $? -ne 0 ]; then
@@ -201,9 +210,9 @@ function fInit () {
 
 #
 # --------------------------------------------------------------------------------------------------------------------------+
-#											 											|
-#			   				   	                FUNÇÃO PARA INFORMAR UM RESUMO DA BASE DE DADOS							|
-#																						|
+#											 											                                    |
+#			   				   	                FUNÇÃO PARA INFORMAR UM RESUMO DA BASE DE DADOS							    |
+#																						                                    |
 # --------------------------------------------------------------------------------------------------------------------------+
 fResumo () {
 	#								resumo de informações da instalação realizada
@@ -215,12 +224,12 @@ fResumo () {
 	fMens "$FInfo3" "$(mysql  -u $CPBASEUSER -p$CPBASEPASSW -b $CPBASE -e \"select @@version\" | head -1)"
 	fMens "$FInfo3" "$(/usr/bin/id -un)"
 	fMens "$FInfo2" "$MInfo09"
-	#fMens "$FInfo1" "$(mysql -N -u $CPBASEUSER -p$CPBASEPASSW -b $CPBASE -e "SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '$CPBASE'")"
 	TABLES=$(mysql -u $CPBASEUSER -p$CPBASEPASSW -b $CPBASE -e 'show tables' | awk '{ print $1}' | grep -v '^Tables' | grep ve_*);
         aa=( $TABLES )
-        #echo ${#aa[@]}
         fMens   "$FInfo1"       "${#aa[@]}"
-	}
+	fMens "$FInfo2" "$MInfo15"
+	fMens "$FInfo1" "$(mysql -N -u $CPBASEUSER -p$CPBASEPASSW -b $CPBASE -e "SELECT count(*) FROM ve_acervoverb")"
+}
 #
 #
 # --------------------------------------------------------------------------------------------------------------------------+
@@ -452,8 +461,44 @@ cat $VEPTEMP/verbete_ocorrencias_com_dash.csv | awk 'BEGIN{FS=":"}{gsub(/\.txt.t
 test $resultado && return
 
 mysql -u $CPBASEUSER -p$CPBASEPASSW -b $CPBASE < "$VEPTEMP/verbetes_inserts_ocorrencias.sql"  || fTratarErro "10"
+rm $VEPTEMP/*.*
 }
 #
+# --------------------------------------------------------------------------------------------------------------------------+
+#                                                                                                                           |
+#                                       FUNÇÃO PARA CONFIGURAR AUTORIDADES DE PASTAS E ARQUIVOS                             |
+#                                                                                                                           |
+# --------------------------------------------------------------------------------------------------------------------------+
+vefSeguranca () {
+	#										definir permissões de acesso para pastas e arquivos
+	find ../ve_* -type d -exec chmod $VECHMOD750 {} \;
+	find ../ve_* -type f -exec chmod $VECHMOD640 {} \;
+	chmod $VECHMOD400 $VEACONFVERB			# definir permissão para o arquivo de configuração do módulo
+	chmod $VECHMOD400 $VEPADMIN/$VEACONFPHP	# definir permissão para o arquivo de configuração utilizado pelos scripts PHP
+	chmod $VECHMOD500 ./*.sh				# definir permissão para arquivos de scripts shell da pasta de instalação
+}
+#
+# --------------------------------------------------------------------------------------------------------------------------+
+#																															|
+#							              FUNÇÃO PARA CRIAR ARQUIVO DE CONFIGURAÇÃO PARA O SCRIPT PHP                       |
+#																															|
+# --------------------------------------------------------------------------------------------------------------------------+
+#
+vefCriaConfPhp () {
+	echo -e "<?php\n\$banco = \"$CPBASE\";\n\$username = \"$CPBASEUSER\";" > $VEPADMIN/$VEACONFPHP
+	echo -e "\$pass = \"$CPBASEPASSW\";"        >> $VEPADMIN/$VEACONFPHP
+	echo -e "\$pastalogs = \"$VEPLOG\";"        >> $VEPADMIN/$VEACONFPHP
+	echo -e "\$pastaadmin = \"$VEPADMIN\";"     >> $VEPADMIN/$VEACONFPHP
+	echo -e "\$arqlogs   = \"$VEALOG\";"        >> $VEPADMIN/$VEACONFPHP
+	echo -e "?>\n" >> $VEPADMIN/$VEACONFPHP
+	#                                           verificar criação do arquivo de configuração para o PHP
+	if [ $? -ne 0 ]; then
+		fMens "$FInsuc" "$MErr14"
+		exit
+	fi
+
+}
+
 # --------------------------------------------------------------------------------------------------------------------------+
 #																															|
 #							              CONTROLE E CORPO PRINCIPAL DO SCRIPT												|
@@ -475,6 +520,8 @@ fi
 fGerarArquivos
 fGerarVerbetes
 #												resumo
+vefCriaConfPhp
+vefSeguranca								# definir autoridade de acesso a pastas e arquivos
 fResumo
 #								mensagem de fim do script com sucesso
 fMens	"$FSucss"	"$MInfo06"
